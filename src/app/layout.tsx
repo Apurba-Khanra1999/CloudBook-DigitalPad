@@ -13,6 +13,60 @@ export const metadata: Metadata = {
     shortcut: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
   },
+  applicationName: 'CloudBook',
+  keywords: [
+    'note taking app',
+    'markdown notes',
+    'minimal note editor',
+    'folders and tags',
+    'instant search',
+    'productivity',
+    'knowledge management',
+    'PKM',
+    'second brain',
+    'zettelkasten',
+    'Next.js notes',
+    'cloud sync',
+    'lucide icons',
+    'tailwind ui',
+    'shadcn ui'
+  ],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cloudbookx.vercel.app/'),
+  openGraph: {
+    title: 'CloudBook — CloudBook',
+    description: 'Minimal, fast, and focused note-taking with folders, tags, and search.',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://cloudbookx.vercel.app/',
+    siteName: 'CloudBook',
+    images: [
+      {
+        url: 'https://temp.inktagon.com/assets/cloudbookx-digitalnotebook.png',
+        width: 1200,
+        height: 630,
+        alt: 'CloudBook — minimal note taking',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CloudBook — Minimal Note-Taking',
+    description: 'Write clearly and organize effortlessly with folders, tags, and search.',
+    images: ['https://temp.inktagon.com/assets/cloudbookx-digitalnotebook.png'],
+    creator: '@CloudBook',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: '/',
+  },
+  category: 'productivity',
+  themeColor: '#228B22',
+  authors: [{ name: 'CloudBook' }],
+  creator: 'CloudBook',
+  publisher: 'CloudBook',
 };
 
 export default function RootLayout({
