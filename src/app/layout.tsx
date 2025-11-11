@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cloudbookx.vercel.app/'),
   openGraph: {
-    title: 'CloudBook — CloudBook',
+    title: 'CloudBook — Digital Notepad',
     description: 'Minimal, fast, and focused note-taking with folders, tags, and search.',
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://cloudbookx.vercel.app/',
     siteName: 'CloudBook',
