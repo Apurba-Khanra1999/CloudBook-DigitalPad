@@ -8,6 +8,11 @@ import { stackServerApp } from "@/stack/server";
 export const metadata: Metadata = {
   title: 'CloudBook',
   description: 'A sophisticated digital notepad for focused note-taking.',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    shortcut: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+  },
 };
 
 export default function RootLayout({

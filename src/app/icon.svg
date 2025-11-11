@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>VerdantNote Icon</title>
+  <defs>
+    <style>
+      .leaf { fill: #228B22; }
+    </style>
+  </defs>
+  <!-- Simple minimalist leaf to match VerdantNote branding -->
+  <path class="leaf" d="M48 8C32 8 20 18 16 32c-4 14 4 24 18 24 14 0 24-12 24-28 0-4-1-8-3-12-1 4-4 7-8 9-10 5-20 4-28 2 8 1 16 0 24-4 6-3 9-7 9-15z"/>
+  <!-- subtle stem -->
+  <path class="leaf" d="M26 50c2-6 8-10 14-12" fill="none" stroke="#228B22" stroke-width="2" stroke-linecap="round"/>
+</svg>
