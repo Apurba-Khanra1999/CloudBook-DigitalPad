@@ -157,13 +157,13 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
       const data = await res.json();
       const saved: Note = data.note;
       setNotes(notes.map(n => (n.id === saved.id ? saved : n)).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
-      // Refresh tags from notes
-      const uniqueTags = Array.from(new Set([...tags.map(t => t.id), ...saved.tags])).map((id) => ({
-        id,
-        name: id,
-        color: getRandomTagColor(),
-      }));
-      setTags(uniqueTags);
+      // Refresh tags from all notes, preserving existing tag names/colors when possible
+      const allTagIds = Array.from(new Set((notes.map(n => n.tags).flat()).concat(saved.tags)));
+      const mergedTags: TagType[] = allTagIds.map(id => {
+        const existing = tags.find(t => t.id === id);
+        return existing ? existing : { id, name: id, color: getRandomTagColor() };
+      });
+      setTags(mergedTags);
     } catch (e) {
       toast({ title: 'Error', description: 'Unable to save changes' });
     }
@@ -208,13 +208,13 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
       const created: Note = data.note;
       setNotes([created, ...notes]);
       setActiveNoteId(created.id);
-      // add any new tag to tag list
-      const uniqueTags = Array.from(new Set([...tags.map(t => t.id), ...created.tags])).map((id) => ({
-        id,
-        name: id,
-        color: getRandomTagColor(),
-      }));
-      setTags(uniqueTags);
+      // add any new tag to tag list while preserving existing names/colors
+      const allTagIds = Array.from(new Set([...tags.map(t => t.id), ...created.tags]));
+      const mergedTags: TagType[] = allTagIds.map(id => {
+        const existing = tags.find(t => t.id === id);
+        return existing ? existing : { id, name: id, color: getRandomTagColor() };
+      });
+      setTags(mergedTags);
       toast({ title: 'Note created', description: 'A new note has been added.' });
     } catch (e) {
       toast({ title: 'Error', description: 'Unable to create note' });
@@ -237,6 +237,41 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
     }
     // If tag exists, return it to be added to the note
     return tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
+  };
+
+  const handleTagRename = (tagId: string, newName: string) => {
+    if (!newName.trim()) return;
+    // Prevent renaming to an existing tag name (case-insensitive)
+    const exists = tags.find(t => t.name.toLowerCase() === newName.trim().toLowerCase() && t.id !== tagId);
+    if (exists) {
+      toast({ title: 'Tag name in use', description: 'Choose a different name.' });
+      return;
+    }
+    setTags(tags.map(t => (t.id === tagId ? { ...t, name: newName.trim() } : t)));
+    toast({ title: 'Tag updated', description: `Tag renamed to "${newName.trim()}".` });
+  };
+
+  const handleTagDelete = async (tagId: string) => {
+    // Remove tag from tag list
+    setTags(prev => prev.filter(t => t.id !== tagId));
+    // Remove tag from all notes and persist each change
+    const notesWithTag = notes.filter(n => n.tags.includes(tagId));
+    const updatedNotes = notes.map(n => (n.tags.includes(tagId) ? { ...n, tags: n.tags.filter(t => t !== tagId) } : n));
+    setNotes(updatedNotes);
+    try {
+      await Promise.allSettled(
+        notesWithTag.map(n =>
+          fetch(`/api/notes/${n.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: n.title, content: n.content, folderId: n.folderId, tags: n.tags.filter(t => t !== tagId) }),
+          })
+        )
+      );
+      toast({ title: 'Tag deleted', description: 'Removed from tag list and affected notes.' });
+    } catch (e) {
+      toast({ title: 'Error', description: 'Unable to persist tag deletion for some notes.' });
+    }
   };
 
   const activeNote = useMemo(() => notes.find(n => n.id === activeNoteId), [
@@ -273,10 +308,17 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
                 <li>
                     <Button
                         variant={filter.type === 'folder' && filter.id === 'all' ? 'secondary': 'ghost'}
-                        className="w-full justify-start"
+                        className="w-full justify-start group"
                         onClick={() => setFilter({ type: 'folder', id: 'all' })}
                     >
-                        <Book className="mr-2 h-4 w-4" />
+                        <span className={cn(
+                          'mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200',
+                          filter.type === 'folder' && filter.id === 'all'
+                            ? 'bg-primary/15 text-primary shadow-sm group-hover:shadow-md'
+                            : 'bg-muted/40 text-muted-foreground group-hover:bg-muted/60'
+                        )}>
+                          <Book className="h-4 w-4" />
+                        </span>
                         All Notes
                     </Button>
                 </li>
@@ -284,10 +326,17 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
                     <li key={folder.id}>
                     <Button
                         variant={filter.type === 'folder' && filter.id === folder.id ? 'secondary': 'ghost'}
-                        className="w-full justify-start"
+                        className="w-full justify-start group"
                         onClick={() => setFilter({ type: 'folder', id: folder.id })}
                     >
-                        <folder.icon className="mr-2 h-4 w-4" />
+                        <span className={cn(
+                          'mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200',
+                          filter.type === 'folder' && filter.id === folder.id
+                            ? 'bg-primary/15 text-primary shadow-sm group-hover:shadow-md'
+                            : 'bg-muted/40 text-muted-foreground group-hover:bg-muted/60'
+                        )}>
+                          <folder.icon className="h-4 w-4" />
+                        </span>
                         {folder.name}
                     </Button>
                     </li>
@@ -301,10 +350,18 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
                     <li key={tag.id}>
                     <Button
                         variant={filter.type === 'tag' && filter.id === tag.id ? 'secondary' : 'ghost'}
-                        className="w-full justify-start"
+                        className="w-full justify-start group"
                         onClick={() => setFilter({ type: 'tag', id: tag.id })}
                     >
-                        <TagIcon className={cn("mr-2 h-4 w-4", tag.color)} />
+                        <span className={cn(
+                          'mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ring-1 ring-black/5',
+                          filter.type === 'tag' && filter.id === tag.id
+                            ? 'bg-primary/15 text-primary shadow-sm group-hover:shadow-md'
+                            : 'bg-muted/40 group-hover:bg-muted/60',
+                          tag.color
+                        )}>
+                          <TagIcon className="h-4 w-4" />
+                        </span>
                         {tag.name}
                     </Button>
                     </li>
@@ -429,6 +486,8 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
                 onNoteDelete={handleNoteDelete}
                 allTags={tags}
                 onTagCreate={handleTagCreate}
+                onTagRename={handleTagRename}
+                onTagDelete={handleTagDelete}
             />
             </div>
         </div>

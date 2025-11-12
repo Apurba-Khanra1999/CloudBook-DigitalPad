@@ -22,15 +22,19 @@ interface NoteEditorProps {
   onNoteDelete: (noteId: string) => void;
   allTags: Tag[];
   onTagCreate: (tagName: string) => Tag | undefined;
+  onTagRename: (tagId: string, newName: string) => void;
+  onTagDelete: (tagId: string) => void;
 }
 
-export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCreate }: NoteEditorProps) {
+export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCreate, onTagRename, onTagDelete }: NoteEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [localTags, setLocalTags] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState('');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editingTagName, setEditingTagName] = useState<string>('');
 
   useEffect(() => {
     if (note) {
@@ -77,6 +81,27 @@ export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCre
         }
         setNewTagName('');
     }
+  };
+
+  const handleStartEditTag = (tagId: string, currentName: string) => {
+    setEditingTagId(tagId);
+    setEditingTagName(currentName);
+  };
+
+  const handleCommitEditTag = () => {
+    if (!editingTagId) return;
+    const trimmed = editingTagName.trim();
+    if (!trimmed) return;
+    onTagRename(editingTagId, trimmed);
+    setEditingTagId(null);
+    setEditingTagName('');
+  };
+
+  const handleDeleteTag = (tagId: string) => {
+    onTagDelete(tagId);
+    // Remove from local selection for current note
+    setLocalTags(prev => prev.filter(t => t !== tagId));
+    setDirty(true);
   };
 
   const handleDelete = () => {
@@ -145,19 +170,58 @@ export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCre
                             <ScrollArea className="h-40">
                               <div className="grid gap-2 p-1">
                                   {allTags.map((tag) => (
-                                      <div key={tag.id} className="flex items-center space-x-2">
+                                      <div key={tag.id} className="flex items-center gap-2">
                                           <Checkbox
                                               id={`tag-${tag.id}`}
                                               checked={localTags.includes(tag.id)}
                                               onCheckedChange={() => handleTagToggle(tag.id)}
                                           />
-                                          <label
-                                              htmlFor={`tag-${tag.id}`}
-                                              className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                          >
-                                              <TagIcon className={cn("h-4 w-4", tag.color)} />
-                                              {tag.name}
-                                          </label>
+                                          {editingTagId === tag.id ? (
+                                            <div className="flex items-center gap-2 w-full">
+                                              <Input
+                                                className="h-8"
+                                                value={editingTagName}
+                                                onChange={(e) => setEditingTagName(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleCommitEditTag()}
+                                              />
+                                              <Button size="sm" variant="secondary" onClick={handleCommitEditTag}>Save</Button>
+                                              <Button size="sm" variant="ghost" onClick={() => { setEditingTagId(null); setEditingTagName(''); }}>Cancel</Button>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center justify-between gap-2 w-full">
+                                              <label
+                                                htmlFor={`tag-${tag.id}`}
+                                                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                              >
+                                                <TagIcon className={cn("h-4 w-4", tag.color)} />
+                                                {tag.name}
+                                              </label>
+                                              <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditTag(tag.id, tag.name)}>
+                                                  <Edit3 className="h-4 w-4" />
+                                                </Button>
+                                                <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+                                                      <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                      <AlertDialogTitle>Delete tag?</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                        This will remove the tag "{tag.name}" and untag affected notes.
+                                                      </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteTag(tag.id)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
+                                              </div>
+                                            </div>
+                                          )}
                                       </div>
                                   ))}
                               </div>
