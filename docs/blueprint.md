@@ -1,12 +1,12 @@
 # CloudBook
 
-An elegant, focused note-taking application built on Next.js. CloudBook emphasizes clarity, speed, and a minimalist writing experience with folders, tags, and search. Authentication is handled via Stack and JWT cookies, and the data model is ready for PostgreSQL integration.
+An elegant, focused note-taking application built on Next.js. CloudBook emphasizes clarity, speed, and a minimalist writing experience with folders, tags, search, pinning, and theme control. Authentication is handled via Stack and JWT cookies, and data is stored in PostgreSQL.
 
 ## Overview
 
 - Purpose: Provide a calm, structured notebook for everyday writing and organization.
 - Scope: Notes, folders, tags, instant search, and simple, reliable editing.
-- Current State: Frontend-first app with mock notes; database and API wiring are prepared but not yet fully integrated in production.
+- Current State: Notes are backed by PostgreSQL via Next.js API routes. Authentication uses Stack and JWT cookies. The UI includes pinning and a dark/light theme toggle.
 
 ## Tech Stack
 
@@ -30,10 +30,12 @@ These are loaded at runtime; the app uses server-side cookies and Stack for sess
 
 ## Features (Current)
 
-- Notes list with folders and tags (mock data via `src/lib/mock-data.ts`).
+- Notes list with folders and tags.
 - Instant local search over title, content, and tags.
 - Focused editor with manual Save/Update and Delete actions.
 - Tag creation and assignment from the editor.
+- Pin notes to keep important items at the top.
+- Dark/Light theme toggle in headers (light default, preference persisted).
 - Auth pages for login and signup; redirect to dashboard.
 - Landing page auto-redirects to dashboard when authenticated.
 
@@ -41,6 +43,13 @@ These are loaded at runtime; the app uses server-side cookies and Stack for sess
 
 - Manual note saving introduced to replace autosave, improving typing performance and removing keystroke-induced network calls.
 - Landing page now redirects authenticated users to the dashboard (`/app`).
+- Added pinning system:
+  - Database column `pinned BOOLEAN NOT NULL DEFAULT FALSE`.
+  - `GET /api/notes` sorts by `pinned DESC, updated_at DESC`.
+  - `POST/PUT` accept `pinned` and persist it.
+- Added dark/light theme toggle in headers:
+  - Uses `localStorage` to persist user preference.
+  - Applies `dark` class on `document.documentElement` for Tailwind’s `dark` variant.
 
 ## Data Model
 
@@ -60,6 +69,7 @@ Defined in `src/lib/db.ts` (PostgreSQL):
   - `content`
   - `folder_id` (string identifier for grouping)
   - `tags` (array of strings)
+  - `pinned` (boolean, default `false`)
   - `created_at` (timestamp)
   - `updated_at` (timestamp)
 
@@ -72,21 +82,19 @@ Helpers include `getUserByEmail`, `createUser`, `ensureUserByEmail`, and basic n
 - Session verification: `src/lib/auth.ts` (`verifySession`) and Stack server helpers in `src/stack/server.ts`.
 - Landing page (`src/app/page.tsx`): server-side check for Stack/JWT cookies; redirects authenticated users to `/app`.
 
-## API (Planned Integration)
-
-The frontend currently operates on local state using mock data. The API endpoints planned/used by the app are:
+## API
 
 - `GET /api/notes` → List notes for the authenticated user.
 
-  - Response: `Note[]`
+  - Response: `Note[]` including `pinned`; ordered by `pinned DESC, updated_at DESC`.
 
 - `POST /api/notes` → Create a note.
 
-  - Body: `{ title, content, folder_id?, tags? }`
+  - Body: `{ title, content, folderId?, tags?, pinned? }`
 
 - `PUT /api/notes/:id` → Update a note.
 
-  - Body: `{ title?, content?, folder_id?, tags? }`
+  - Body: `{ title?, content?, folderId?, tags?, pinned? }`
 
 - `DELETE /api/notes/:id` → Delete a note.
 
@@ -96,19 +104,24 @@ Ensure session validation in each route and map `user_id` from the verified sess
 
 - Entry: `src/app/app/page.tsx` (dashboard)
 - Main app: `src/components/cloud-book-app.tsx`
-  - Local state for notes, folders, tags (from `mock-data`).
+  - Local state for notes, folders, tags.
   - Filtering by folder/tag and instant search.
-  - `handleNewNote`, `handleNoteUpdate`, `handleNoteDelete` for CRUD in memory.
+  - `handleNewNote`, `handleNoteUpdate`, and server-backed CRUD via `/api/notes`.
+  - Sorting keeps pinned notes at the top of the current filter.
 - Editor: `src/components/note-editor.tsx`
   - Local state for `title`, `content`, and tags.
   - Manual Save/Update button calls `onNoteUpdate` once, only when clicked.
+  - Pin/Unpin button toggles `pinned` via `onTogglePinned`.
   - Delete uses a confirmation dialog.
+ - Theme: `src/components/theme-toggle.tsx` in headers; persists theme and toggles Tailwind `dark` variant.
 
 ## UX Behavior
 
 - Manual Save/Update: The button enables when there are unsaved changes. The label switches between "Save" (new) and "Update" (existing). No autosave occurs while typing.
 - Tag management: Create tags inline, assign/unassign via popover in editor.
 - Filters: Sidebar filter controls by folder/tag; search bar narrows the list by title/content/tags.
+- Pinning: Clicking the pin icon toggles a note’s `pinned` status; pinned notes float to the top of the list.
+- Theme: A header toggle switches between light and dark modes; selection persists across sessions.
 - Feedback: Toasts for create and delete actions; human-friendly `updatedAt` display.
 
 ## Style Guidelines

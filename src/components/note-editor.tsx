@@ -6,7 +6,7 @@ import type { Note, Tag } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Edit3, Tag as TagIcon, Trash2, Plus } from 'lucide-react';
+import { Edit3, Tag as TagIcon, Trash2, Plus, Pin, PinOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,6 +19,7 @@ import { Separator } from './ui/separator';
 interface NoteEditorProps {
   note: Note | undefined | null;
   onNoteUpdate: (updatedNote: Note) => void;
+  onTogglePinned: (noteId: string, pinned: boolean) => void;
   onMoveToTrash: (noteId: string) => void;
   onRestore: (noteId: string) => void;
   onDeletePermanent: (noteId: string) => void;
@@ -28,7 +29,7 @@ interface NoteEditorProps {
   onTagDelete: (tagId: string) => void;
 }
 
-export function NoteEditor({ note, onNoteUpdate, onMoveToTrash, onRestore, onDeletePermanent, allTags, onTagCreate, onTagRename, onTagDelete }: NoteEditorProps) {
+export function NoteEditor({ note, onNoteUpdate, onTogglePinned, onMoveToTrash, onRestore, onDeletePermanent, allTags, onTagCreate, onTagRename, onTagDelete }: NoteEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [localTags, setLocalTags] = useState<string[]>([]);
@@ -165,6 +166,17 @@ export function NoteEditor({ note, onNoteUpdate, onMoveToTrash, onRestore, onDel
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                {note && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onTogglePinned(note.id, !Boolean(note.pinned))}
+                    className={Boolean(note.pinned) ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-600/10' : ''}
+                    title={Boolean(note.pinned) ? 'Unpin' : 'Pin'}
+                  >
+                    {Boolean(note.pinned) ? <Pin className="h-5 w-5" /> : <PinOff className="h-5 w-5" />}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   onClick={handleSaveUpdate}

@@ -9,6 +9,8 @@ CloudBook is a sophisticated and intuitive digital notepad designed for focused 
 - **Advanced Search & Filtering**: A powerful search bar with tag-based filtering to instantly locate specific notes.
 - **Responsive Design**: A fully responsive interface that works beautifully on desktops, tablets, and mobile devices.
 - **Modern UI/UX**: Built with ShadCN UI and Tailwind CSS for a polished and aesthetically pleasing user experience.
+ - **Pin Notes**: Pin important notes to keep them at the top of lists.
+ - **Dark/Light Theme Toggle**: Quickly switch themes from the header; light is default and preference is persisted.
 
 ## 🚀 Tech Stack
 
@@ -18,6 +20,8 @@ CloudBook is a sophisticated and intuitive digital notepad designed for focused 
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Icons**: [Lucide React](https://lucide.dev/guide/packages/lucide-react)
 - **AI/Generative**: [Genkit](https://firebase.google.com/docs/genkit)
+ - **Database**: PostgreSQL (Neon serverless), via `src/lib/db.ts`
+ - **Auth**: Stack + JWT cookies
 
 ## 📂 Project Structure
 
@@ -34,7 +38,8 @@ The project follows a standard Next.js App Router structure. Key directories inc
 │   ├── components/         # Reusable React components
 │   │   ├── ui/             # ShadCN UI components
 │   │   ├── cloud-book-app.tsx  # Main application component
-│   │   └── note-editor.tsx # The component for editing notes
+│   │   ├── note-editor.tsx # The component for editing notes
+│   │   └── theme-toggle.tsx # Header theme toggle (dark/light)
 │   │
 │   ├── hooks/              # Custom React hooks
 │   │
@@ -82,3 +87,17 @@ This will start the application, typically on `http://localhost:9002`.
 - `npm run lint`: Lints the codebase using Next.js's built-in ESLint configuration.
 - `npm run typecheck`: Runs the TypeScript compiler to check for type errors.
 - `npm run genkit:dev`: Starts the Genkit development server for AI flows.
+
+## 🧠 Notes & API
+
+- Notes are stored in PostgreSQL. The `notes` table includes `pinned` (boolean, default `false`) to support pinning.
+- API endpoints:
+  - `GET /api/notes` – returns notes for the authenticated user, ordered by `pinned DESC, updated_at DESC`.
+  - `POST /api/notes` – creates a note; accepts `title`, `content`, `folderId`, `tags`, and optional `pinned`.
+  - `PUT /api/notes/:id` – updates a note; accepts the same fields and conditionally updates `pinned`.
+  - `DELETE /api/notes/:id` – deletes a note.
+
+## 🎛️ Theme Toggle
+
+- A `ThemeToggle` button is present in both the landing page header and the app header.
+- Theme preference (dark/light) is persisted in `localStorage` and applied via the `dark` class on `document.documentElement`.

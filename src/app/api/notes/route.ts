@@ -12,6 +12,7 @@ function toNoteRow(row: any) {
     content: String(row.content ?? ''),
     folderId: String(row.folder_id ?? 'notes'),
     tags: Array.isArray(row.tags) ? row.tags : [],
+    pinned: Boolean(row.pinned ?? false),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -43,7 +44,7 @@ export async function GET() {
     if (!uid) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const rows = await sql`SELECT * FROM notes WHERE user_id = ${uid} ORDER BY updated_at DESC`;
+    const rows = await sql`SELECT * FROM notes WHERE user_id = ${uid} ORDER BY pinned DESC, updated_at DESC`;
     const notes = rows.map(toNoteRow);
     return NextResponse.json({ notes }, { status: 200 });
   } catch (e: any) {
@@ -63,10 +64,11 @@ export async function POST(req: Request) {
     const content: string = body?.content || '';
     const folderId: string = (body?.folderId || 'notes').trim();
     const tags: string[] = Array.isArray(body?.tags) ? body.tags : [];
+    const pinned: boolean = typeof body?.pinned === 'boolean' ? body.pinned : false;
     const id = randomUUID();
     const rows = await sql`
-      INSERT INTO notes (id, user_id, title, content, folder_id, tags)
-      VALUES (${id}, ${uid}, ${title}, ${content}, ${folderId}, ${tags})
+      INSERT INTO notes (id, user_id, title, content, folder_id, tags, pinned)
+      VALUES (${id}, ${uid}, ${title}, ${content}, ${folderId}, ${tags}, ${pinned})
       RETURNING *
     `;
     const note = toNoteRow(rows[0]);

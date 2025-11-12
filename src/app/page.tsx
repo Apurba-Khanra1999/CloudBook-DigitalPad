@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
@@ -50,6 +51,7 @@ export default async function Home() {
             <Link href="#faq" className="hover:text-foreground">FAQ</Link>
           </nav>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link href="/handler/sign-in" className="text-sm underline">Log in</Link>
             <Button asChild variant="outline" size="sm">
               <Link href="/handler/sign-up">Sign up</Link>

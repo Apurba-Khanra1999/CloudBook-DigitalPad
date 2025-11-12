@@ -14,6 +14,7 @@ import {
   Trash2,
   ChevronDown,
   StickyNote,
+  Pin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 
 function Logo() {
@@ -101,7 +103,12 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
         notesToFilter = notesToFilter.filter(note => note.tags.includes(searchTag));
     }
 
-    return notesToFilter.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return notesToFilter.sort((a, b) => {
+      const ap = Boolean(a.pinned);
+      const bp = Boolean(b.pinned);
+      if (ap !== bp) return bp ? 1 : -1; // pinned first
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
   }, [notes, filter, searchQuery, searchTag]);
   
   useEffect(() => {
@@ -154,12 +161,13 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
           content: updatedNote.content,
           folderId: updatedNote.folderId,
           tags: updatedNote.tags,
+          pinned: updatedNote.pinned,
         }),
       });
       if (!res.ok) throw new Error('Failed to update note');
       const data = await res.json();
       const saved: Note = data.note;
-      setNotes(notes.map(n => (n.id === saved.id ? saved : n)).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      setNotes(notes.map(n => (n.id === saved.id ? saved : n)));
       // Refresh tags from all notes, preserving existing tag names/colors when possible
       const allTagIds = Array.from(new Set((notes.map(n => n.tags).flat()).concat(saved.tags)));
       const mergedTags: TagType[] = allTagIds.map(id => {
@@ -169,6 +177,31 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
       setTags(mergedTags);
     } catch (e) {
       toast({ title: 'Error', description: 'Unable to save changes' });
+    }
+  };
+
+  const handleNoteTogglePinned = async (noteId: string, pinned: boolean) => {
+    try {
+      const target = notes.find(n => n.id === noteId);
+      if (!target) return;
+      const res = await fetch(`/api/notes/${noteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: target.title,
+          content: target.content,
+          folderId: target.folderId,
+          tags: target.tags,
+          pinned,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle pin');
+      const data = await res.json();
+      const saved: Note = data.note;
+      setNotes(notes.map(n => (n.id === saved.id ? saved : n)));
+      toast({ title: pinned ? 'Note pinned' : 'Note unpinned', description: `${target.title || 'Untitled'} ${pinned ? 'is pinned.' : 'is unpinned.'}` });
+    } catch (e) {
+      toast({ title: 'Error', description: 'Unable to toggle pin' });
     }
   };
   
@@ -466,6 +499,7 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
               {getFilterName()}
             </h1>
           </div>
+          <ThemeToggle />
           <div className="relative ml-auto flex-1 md:grow-0">
             <div className="relative flex items-center">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -517,7 +551,10 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
                             : 'hover:bg-accent'
                         )}
                         >
-                        <h3 className="font-semibold text-sm truncate mb-1">{note.title || "Untitled Note"}</h3>
+                        <h3 className="font-semibold text-sm truncate mb-1 flex items-center gap-1">
+                          {Boolean(note.pinned) && <Pin className="h-3 w-3 text-yellow-600" />}
+                          <span className="truncate">{note.title || "Untitled Note"}</span>
+                        </h3>
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
                             {note.content.replace(/#/g, '').trim().split('\n')[0] || "No additional content"}
                         </p>
@@ -542,6 +579,7 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
             <NoteEditor 
                 note={activeNote} 
                 onNoteUpdate={handleNoteUpdate} 
+                onTogglePinned={handleNoteTogglePinned}
                 onMoveToTrash={handleNoteMoveToTrash}
                 onRestore={handleNoteRestore}
                 onDeletePermanent={handleNotePermanentDelete}

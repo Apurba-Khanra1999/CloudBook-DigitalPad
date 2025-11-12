@@ -37,6 +37,11 @@ export async function initNotesSchema() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `;
+  // Ensure pinned column exists for pinning notes
+  await sql`
+    ALTER TABLE notes
+    ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT FALSE;
+  `;
 }
 
 export type DbUser = {

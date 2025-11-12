@@ -34,9 +34,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const content: string = body?.content || '';
     const folderId: string = (body?.folderId || 'notes').trim();
     const tags: string[] = Array.isArray(body?.tags) ? body.tags : [];
+    const pinned: boolean | null = typeof body?.pinned === 'boolean' ? body.pinned : null;
     const rows = await sql`
       UPDATE notes
-      SET title = ${title}, content = ${content}, folder_id = ${folderId}, tags = ${tags}, updated_at = NOW()
+      SET title = ${title}, content = ${content}, folder_id = ${folderId}, tags = ${tags}, pinned = COALESCE(${pinned}, pinned), updated_at = NOW()
       WHERE id = ${id} AND user_id = ${uid}
       RETURNING *
     `;
@@ -50,6 +51,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       content: String(updated.content ?? ''),
       folderId: String(updated.folder_id ?? 'notes'),
       tags: Array.isArray(updated.tags) ? updated.tags : [],
+      pinned: Boolean(updated.pinned ?? false),
       createdAt: new Date(updated.created_at).toISOString(),
       updatedAt: new Date(updated.updated_at).toISOString(),
     } });

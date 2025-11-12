@@ -6,6 +6,7 @@ export interface Note {
   content: string;
   folderId: string;
   tags: string[];
+  pinned?: boolean;
   createdAt: string;
   updatedAt: string;
 }
