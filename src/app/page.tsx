@@ -74,30 +74,60 @@ export default async function Home() {
       </div>
 
       {/* Hero */}
-      <section className="px-6 py-20 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-6xl text-center">
-          <Badge variant="secondary" className="inline-flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> New: Polished note editor with tags
-          </Badge>
-          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            CloudBook — Focused notes, crystal clarity
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
-            Organize ideas with folders and tags, search instantly, and write in a delightful editor. Your thoughts, beautifully structured.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Button asChild size="lg" className="group">
-              <Link href="/app">
-                Open the App
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="#features">Explore Features</Link>
-            </Button>
+  <section className="px-6 py-20 sm:py-24 lg:px-8">
+    <div className="mx-auto max-w-6xl text-center">
+      <Badge variant="secondary" className="inline-flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" /> New: Manual Save/Update for smoother editing
+      </Badge>
+      <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+        CloudBook — Focused notes, crystal clarity
+      </h1>
+      <p className="mx-auto mt-6 max-w-2xl text-pretty text-muted-foreground sm:text-lg">
+        Organize ideas with folders and tags, search instantly, and write in a delightful editor. Your thoughts, beautifully structured.
+      </p>
+      <div className="mt-8 flex items-center justify-center gap-3">
+        <Button asChild size="lg" className="group">
+          <Link href="/app">
+            Open the App
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link href="#features">Explore Features</Link>
+        </Button>
+        <Button asChild variant="ghost" size="lg">
+          <Link href="/handler/sign-up">Start for Free</Link>
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  {/* Social proof */}
+  <section className="px-6 -mt-8 pb-6 lg:px-8">
+    <div className="mx-auto max-w-6xl">
+      <div className="rounded-xl border bg-card/60 p-4 sm:p-6">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="text-center sm:text-left">
+            <p className="text-xs font-medium text-muted-foreground">Trusted by focused teams and independent thinkers</p>
+            <div className="mt-1 flex items-center justify-center gap-1 sm:justify-start">
+              {/* Simple star rating visual */}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} className="inline-block h-3 w-3 rounded-sm bg-primary/80" />
+              ))}
+              <span className="ml-2 text-xs text-muted-foreground">4.8/5 average</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {["LeafWorks", "CalmNote", "FocusLab", "GreenStack"].map((name) => (
+              <div key={name} className="flex h-8 items-center justify-center rounded border bg-background px-3 text-[10px] font-medium text-muted-foreground">
+                {name}
+              </div>
+            ))}
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  </section>
 
       {/* Preview panel */}
       <section className="px-6 pb-16 lg:px-8">
@@ -117,7 +147,7 @@ export default async function Home() {
                   <h3 className="text-lg font-semibold">Clean, distraction-free editor</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Write fast with a minimal editor that keeps focus on your content. Organize with tags and folders. Everything autosaves.
+                  Write fast with a minimal editor that keeps focus on your content. Organize with tags and folders. Save or update when you’re ready.
                 </p>
                 <ul className="mt-4 space-y-2 text-sm">
                   {[
@@ -242,7 +272,7 @@ export default async function Home() {
           </div>
           <ol className="mt-10 grid gap-6 sm:grid-cols-3">
             {[
-              { step: 1, title: "Write", desc: "Start typing in a clean editor. Autosave keeps you moving." },
+              { step: 1, title: "Write", desc: "Start typing in a clean editor. Save or update when you’re ready." },
               { step: 2, title: "Organize", desc: "Use folders and tags to create context and flow." },
               { step: 3, title: "Find", desc: "Search by title, content, or tags — instantly." },
             ].map(({ step, title, desc }) => (
