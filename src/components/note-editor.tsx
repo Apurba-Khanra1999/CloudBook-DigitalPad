@@ -19,14 +19,16 @@ import { Separator } from './ui/separator';
 interface NoteEditorProps {
   note: Note | undefined | null;
   onNoteUpdate: (updatedNote: Note) => void;
-  onNoteDelete: (noteId: string) => void;
+  onMoveToTrash: (noteId: string) => void;
+  onRestore: (noteId: string) => void;
+  onDeletePermanent: (noteId: string) => void;
   allTags: Tag[];
   onTagCreate: (tagName: string) => Tag | undefined;
   onTagRename: (tagId: string, newName: string) => void;
   onTagDelete: (tagId: string) => void;
 }
 
-export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCreate, onTagRename, onTagDelete }: NoteEditorProps) {
+export function NoteEditor({ note, onNoteUpdate, onMoveToTrash, onRestore, onDeletePermanent, allTags, onTagCreate, onTagRename, onTagDelete }: NoteEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [localTags, setLocalTags] = useState<string[]>([]);
@@ -104,9 +106,21 @@ export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCre
     setDirty(true);
   };
 
-  const handleDelete = () => {
+  const handleMoveToTrash = () => {
     if (note) {
-      onNoteDelete(note.id);
+      onMoveToTrash(note.id);
+    }
+  };
+
+  const handleRestore = () => {
+    if (note) {
+      onRestore(note.id);
+    }
+  };
+
+  const handlePermanentDelete = () => {
+    if (note) {
+      onDeletePermanent(note.id);
     }
   };
 
@@ -243,25 +257,50 @@ export function NoteEditor({ note, onNoteUpdate, onNoteDelete, allTags, onTagCre
                     </PopoverContent>
                 </Popover>
 
-                 <AlertDialog>
+                {note.folderId !== 'trash' ? (
+                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-5 w-5" />
-                        </Button>
+                      <Button variant="ghost" size="icon" className="text-amber-600 hover:text-amber-700 hover:bg-amber-600/10">
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will move "{note.title}" to Trash. You can restore it later or delete permanently from Trash.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleMoveToTrash} className="bg-amber-600 hover:bg-amber-700">Move to Trash</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleRestore}>Restore</Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the note titled "{note.title}".
-                            </AlertDialogDescription>
+                          <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. It will permanently delete "{note.title}".
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handlePermanentDelete} className="bg-destructive hover:bg-destructive/90">Delete Permanently</AlertDialogAction>
                         </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
             </div>
         </div>
 

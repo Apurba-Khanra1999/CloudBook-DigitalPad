@@ -77,8 +77,11 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
 
     // 1. Sidebar filter
     if (filter.type === 'folder') {
-        if(filter.id !== 'all' && filter.id) {
-             notesToFilter = notes.filter(n => n.folderId === filter.id);
+        if (filter.id === 'all') {
+          // Exclude Trash from All Notes
+          notesToFilter = notes.filter(n => n.folderId !== 'trash');
+        } else if (filter.id) {
+          notesToFilter = notes.filter(n => n.folderId === filter.id);
         }
     } else if (filter.type === 'tag') {
       notesToFilter = notes.filter(n => n.tags.includes(filter.id!));
@@ -169,16 +172,72 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
     }
   };
   
-  const handleNoteDelete = async (noteId: string) => {
+  const handleNoteMoveToTrash = async (noteId: string) => {
+    try {
+      const noteToTrash = notes.find(n => n.id === noteId);
+      if (!noteToTrash) return;
+      const res = await fetch(`/api/notes/${noteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: noteToTrash.title,
+          content: noteToTrash.content,
+          folderId: 'trash',
+          tags: noteToTrash.tags,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to move to trash');
+      const data = await res.json();
+      const saved: Note = data.note;
+      setNotes(notes.map(n => (n.id === saved.id ? saved : n)));
+      toast({ title: 'Moved to Trash', description: `"${noteToTrash.title || 'Untitled'}" is now in Trash.` });
+      if (activeNoteId === noteId && !(filter.type === 'folder' && filter.id === 'trash')) {
+        const remainingNotes = filteredNotes.filter(n => n.id !== noteId);
+        if (remainingNotes.length > 0) {
+          const currentIndex = filteredNotes.findIndex(n => n.id === noteId);
+          const nextNote = remainingNotes[Math.min(currentIndex, remainingNotes.length - 1)];
+          setActiveNoteId(nextNote.id);
+        } else {
+          setActiveNoteId(null);
+        }
+      }
+    } catch (e) {
+      toast({ title: 'Error', description: 'Unable to move note to Trash' });
+    }
+  };
+
+  const handleNoteRestore = async (noteId: string) => {
+    try {
+      const noteToRestore = notes.find(n => n.id === noteId);
+      if (!noteToRestore) return;
+      const res = await fetch(`/api/notes/${noteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: noteToRestore.title,
+          content: noteToRestore.content,
+          folderId: 'notes',
+          tags: noteToRestore.tags,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to restore');
+      const data = await res.json();
+      const saved: Note = data.note;
+      setNotes(notes.map(n => (n.id === saved.id ? saved : n)));
+      toast({ title: 'Note restored', description: `"${noteToRestore.title || 'Untitled'}" moved back to Notes.` });
+      setActiveNoteId(saved.id);
+    } catch (e) {
+      toast({ title: 'Error', description: 'Unable to restore note' });
+    }
+  };
+
+  const handleNotePermanentDelete = async (noteId: string) => {
     try {
       const noteToDelete = notes.find(n => n.id === noteId);
       const res = await fetch(`/api/notes/${noteId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       setNotes(notes => notes.filter(n => n.id !== noteId));
-      toast({
-        title: 'Note deleted',
-        description: `The note "${noteToDelete?.title || 'Untitled'}" has been removed.`,
-      });
+      toast({ title: 'Deleted permanently', description: `The note "${noteToDelete?.title || 'Untitled'}" has been removed.` });
       if (activeNoteId === noteId) {
         const remainingNotes = filteredNotes.filter(n => n.id !== noteId);
         if (remainingNotes.length > 0) {
@@ -483,7 +542,9 @@ export function CloudBookApp({ user }: { user?: CloudBookUser }) {
             <NoteEditor 
                 note={activeNote} 
                 onNoteUpdate={handleNoteUpdate} 
-                onNoteDelete={handleNoteDelete}
+                onMoveToTrash={handleNoteMoveToTrash}
+                onRestore={handleNoteRestore}
+                onDeletePermanent={handleNotePermanentDelete}
                 allTags={tags}
                 onTagCreate={handleTagCreate}
                 onTagRename={handleTagRename}
